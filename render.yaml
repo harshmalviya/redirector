@@ -1,0 +1,22 @@
+# A `render.yaml` file to define services for your Render Blueprint.
+# Learn more about Blueprints: https://render.com/docs/blueprints
+services:
+  - type: web
+    name: request-redirector
+    env: node
+    region: oregon # You can choose any available Render region, e.g., oregon, frankfurt, singapore, ohio, virginia
+    plan: free # Use 'starter' for more resources or 'standard' for production
+    buildCommand: npm install
+    startCommand: npm start
+    # Define environment variables (optional, but good practice for things like database URLs, API keys)
+    envVars:
+      - key: PORT
+        value: 3000 # Your app listens on 3000, Render will map an external port to this.
+      - key: NODE_ENV
+        value: production
+    # Health check (optional, but recommended)
+    healthCheckPath: /
+    # Auto-deploy on push to main branch (or your chosen branch)
+    autoDeploy: true
+    # Specify the branch to deploy from
+    branch: main # Or master, or whatever your main branch is called

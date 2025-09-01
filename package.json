@@ -1,0 +1,13 @@
+{
+  "name": "request-redirector",
+  "version": "1.0.0",
+  "description": "A Node.js application to redirect to URLs, including deep links.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pug": "^3.0.2"
+  }
+}

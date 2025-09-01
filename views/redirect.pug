@@ -1,0 +1,81 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Redirecting...
+    style.
+      body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      button { padding: 10px 20px; font-size: 1em; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; margin: 5px; }
+      button:hover { background-color: #0056b3; }
+      a { color: #007bff; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      #statusMessage { margin-top: 20px; font-weight: bold; }
+  body
+    .container
+      h1 Redirecting you...
+      p#statusMessage Attempting to open the application...
+      p If you are not redirected automatically:
+      button#openAppButton Open App Now
+      p
+        small If the app doesn't open, it might not be installed or the link is invalid.
+
+      script.
+        const targetUrl = !{JSON.stringify(targetUrl)}; // Deep link or regular URL
+        const fallbackUrl = !{JSON.stringify(fallbackUrl)}; // Optional fallback URL (e.g., app store)
+        const OPEN_APP_TIMEOUT = 2000; // Time in milliseconds to wait before considering app not launched
+
+        function tryRedirect() {
+          let appOpened = false;
+
+          // Attempt to open the target URL (deep link or HTTP/HTTPS)
+          const redirectAttempt = setTimeout(() => {
+            if (!appOpened) {
+              // If the app hasn't opened within the timeout, try the fallback
+              if (fallbackUrl) {
+                console.log('App did not open, redirecting to fallback:', fallbackUrl);
+                window.location.href = fallbackUrl;
+              } else {
+                console.log('App did not open, no fallback URL provided.');
+                document.getElementById('statusMessage').innerText = 'The app did not open. You can try again or check if it\'s installed.';
+              }
+            }
+          }, OPEN_APP_TIMEOUT);
+
+          // This attempts to navigate to the target URL.
+          // For deep links, it tries to launch the app.
+          window.location.href = targetUrl;
+
+          // Clear the timeout if the page unloads (meaning the app likely opened, or browser navigated away)
+          window.addEventListener('blur', () => {
+            console.log('Browser lost focus, assuming app opened or user navigated.');
+            appOpened = true;
+            clearTimeout(redirectAttempt);
+          });
+          window.addEventListener('pagehide', () => {
+             console.log('Page is hiding, assuming app opened or user navigated.');
+             appOpened = true;
+             clearTimeout(redirectAttempt);
+          });
+          window.addEventListener('beforeunload', () => {
+             console.log('Page is unloading, assuming app opened or user navigated.');
+             appOpened = true;
+             clearTimeout(redirectAttempt);
+          });
+        }
+
+        // Call the redirect function on page load
+        document.addEventListener('DOMContentLoaded', tryRedirect);
+
+        // Add event listener for the manual retry button
+        document.getElementById('openAppButton').addEventListener('click', () => {
+          document.getElementById('statusMessage').innerText = 'Attempting to open the application again...';
+          tryRedirect();
+        });
+
+        // For cases where a normal HTTP/HTTPS URL is passed, we want to just redirect directly.
+        // The above logic still works, but this ensures a quicker redirect for non-deep-links.
+        if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+            window.location.replace(targetUrl); // Use replace to avoid back button issues
+        }
