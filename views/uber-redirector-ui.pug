@@ -4,7 +4,7 @@ html(lang="en")
     meta(charset="UTF-8")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     title Uber Deep Link Redirector
-    link(href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap", rel="stylesheet")
+    link(href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap", rel="stylesheet")
     style.
       :root {
         --primary-color: #3498db;
@@ -14,6 +14,7 @@ html(lang="en")
         --card-background: #ffffff;
         --border-color: #e0e0e0;
         --shadow: rgba(0, 0, 0, 0.1);
+        --danger-color: #e74c3c;
       }
       body {
         font-family: 'Poppins', sans-serif;
@@ -35,6 +36,8 @@ html(lang="en")
         width: 100%;
         max-width: 500px;
         text-align: center;
+        position: relative;
+        overflow: hidden; /* For timer animation */
       }
       h1 {
         color: var(--primary-color);
@@ -99,17 +102,57 @@ html(lang="en")
         box-shadow: none;
       }
       .error-message {
-        color: #e74c3c;
+        color: var(--danger-color);
         margin-top: 10px;
         font-size: 0.9em;
       }
-      #uberRedirectLink {
-          display: none; /* Hidden by default */
+      #autoRedirectMessage {
+        background-color: #ffe0b2; /* Light orange background */
+        color: #e65100; /* Darker orange text */
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        font-weight: 600;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 2px 5px rgba(255, 160, 0, 0.2);
       }
+      #autoRedirectMessage span {
+        font-size: 1.3em;
+        font-weight: 700;
+      }
+      #cancelRedirectButton {
+        background-color: var(--danger-color);
+        margin-left: 15px;
+        padding: 8px 15px;
+        font-size: 0.9em;
+        box-shadow: none;
+      }
+      #cancelRedirectButton:hover {
+        background-color: #c0392b;
+      }
+      /* Hide elements when auto-redirecting to simplify UI */
+      .auto-redirecting .form-group,
+      .auto-redirecting .coordinate-display,
+      .auto-redirecting #redirectButton {
+          display: none;
+      }
+      .auto-redirecting #autoRedirectMessage {
+          display: flex; /* Ensure message is visible */
+      }
+
 
   body
     .container
       h1 Uber Dropoff Redirector
+      
+      #autoRedirectMessage(style="display:none;")
+        | Redirecting in #[span#countdown 5] seconds...
+        button#cancelRedirectButton(type="button") Cancel
+
       .form-group
         label(for="latLonInput") Enter Latitude,Longitude:
         input(type="text", id="latLonInput", placeholder="e.g., 28.5127698,76.7758902", value=initialInput || '')
@@ -122,19 +165,24 @@ html(lang="en")
 
       button#redirectButton(disabled=(!initialLat || !initialLon)) Redirect to Uber App
 
-      // Hidden link that will be triggered by JS
-      a#uberRedirectLink(href="#", target="_blank", rel="noopener noreferrer")
-
       script.
         const latLonInput = document.getElementById('latLonInput');
         const displayLat = document.getElementById('displayLat');
         const displayLon = document.getElementById('displayLon');
         const redirectButton = document.getElementById('redirectButton');
         const errorMessage = document.getElementById('errorMessage');
-        const uberRedirectLink = document.getElementById('uberRedirectLink');
+        const autoRedirectMessage = document.getElementById('autoRedirectMessage');
+        const countdownSpan = document.getElementById('countdown');
+        const cancelRedirectButton = document.getElementById('cancelRedirectButton');
 
         let currentLat = !{JSON.stringify(initialLat)};
         let currentLon = !{JSON.stringify(initialLon)};
+        const autoRedirectEnabled = !{JSON.stringify(autoRedirect)};
+
+        const REDIRECT_DELAY_SECONDS = 5;
+        let countdownTimer;
+        let countdownValue = REDIRECT_DELAY_SECONDS;
+        let autoRedirectScheduled = false;
 
         function validateAndDisplayCoordinates() {
           const inputValue = latLonInput.value.trim();
@@ -176,27 +224,72 @@ html(lang="en")
           }
         }
 
-        function redirectToUber() {
+        function initiateUberRedirect() {
             if (currentLat && currentLon) {
-                // Encode the Uber deep link properly
                 const uberDeepLink = `uber://?action=setPickup&pickup=my_location&dropoff[latitude]=${currentLat}&dropoff[longitude]=${currentLon}`;
-                
-                // Construct the full redirector URL to use the existing / path
-                // We must encode the uberDeepLink as it will be a query parameter to our root redirector
                 const fullRedirectorUrl = `/?url=${encodeURIComponent(uberDeepLink)}`;
-                
                 window.location.href = fullRedirectorUrl;
             } else {
                 errorMessage.innerText = 'Please enter valid coordinates before redirecting.';
             }
         }
 
-        // Initial validation and display on page load if input is present
+        function startAutoRedirectCountdown() {
+            if (autoRedirectScheduled || !autoRedirectEnabled || !currentLat || !currentLon) {
+                return; // Only run if auto-redirect is enabled and valid coordinates are present
+            }
+            autoRedirectScheduled = true;
+            document.body.classList.add('auto-redirecting'); // Add class to hide form elements
+            autoRedirectMessage.style.display = 'flex'; // Show countdown message
+
+            countdownValue = REDIRECT_DELAY_SECONDS;
+            countdownSpan.innerText = countdownValue;
+
+            countdownTimer = setInterval(() => {
+                countdownValue--;
+                countdownSpan.innerText = countdownValue;
+                if (countdownValue <= 0) {
+                    clearInterval(countdownTimer);
+                    initiateUberRedirect();
+                }
+            }, 1000);
+        }
+
+        function cancelAutoRedirect() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            autoRedirectScheduled = false;
+            document.body.classList.remove('auto-redirecting'); // Show form elements again
+            autoRedirectMessage.style.display = 'none'; // Hide countdown message
+            errorMessage.innerText = 'Auto-redirect cancelled. You can modify input or redirect manually.';
+        }
+
+        // --- Event Listeners and Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
+          // Initial validation and display on page load if input is present
           if (latLonInput.value) {
             validateAndDisplayCoordinates();
           }
+
+          // If autoRedirect is enabled AND we have valid initial coordinates, start countdown
+          if (autoRedirectEnabled && currentLat && currentLon) {
+            startAutoRedirectCountdown();
+          }
         });
 
-        latLonInput.addEventListener('input', validateAndDisplayCoordinates);
-        redirectButton.addEventListener('click', redirectToUber);
+        latLonInput.addEventListener('input', () => {
+            validateAndDisplayCoordinates();
+            // If user types, cancel any ongoing auto-redirect to allow interaction
+            if (autoRedirectScheduled) {
+                cancelAutoRedirect();
+            }
+        });
+        redirectButton.addEventListener('click', () => {
+            // If user clicks manual redirect, cancel any auto-redirect
+            if (autoRedirectScheduled) {
+                cancelAutoRedirect();
+            }
+            initiateUberRedirect();
+        });
+        cancelRedirectButton.addEventListener('click', cancelAutoRedirect);

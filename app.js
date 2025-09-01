@@ -36,20 +36,27 @@ app.get('/uber-redirector', (req, res) => {
     let initialInput = '';
     let initialLat = '';
     let initialLon = '';
+    let autoRedirect = false; // Default to false
 
     if (req.query.input) {
         initialInput = req.query.input;
         const parts = initialInput.split(',');
         if (parts.length === 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
-            initialLat = parseFloat(parts[0].trim()).toFixed(7); // Format to 7 decimal places
-            initialLon = parseFloat(parts[1].trim()).toFixed(7); // Format to 7 decimal places
+            initialLat = parseFloat(parts[0].trim()).toFixed(7);
+            initialLon = parseFloat(parts[1].trim()).toFixed(7);
         }
+    }
+
+    // Only set autoRedirect to true if 'autoRedirect=true' is explicitly in query and valid input is present
+    if (req.query.autoRedirect && req.query.autoRedirect.toLowerCase() === 'true' && initialLat && initialLon) {
+        autoRedirect = true;
     }
 
     res.render('uber-redirector-ui', {
         initialInput: initialInput,
         initialLat: initialLat,
-        initialLon: initialLon
+        initialLon: initialLon,
+        autoRedirect: autoRedirect // Pass autoRedirect flag to the template
     });
 });
 
@@ -61,4 +68,5 @@ app.listen(port, () => {
     console.log(`---`);
     console.log(`Uber Redirector UI: http://localhost:${port}/uber-redirector`);
     console.log(`Uber Redirector UI with input: http://localhost:${port}/uber-redirector?input=28.5127698,76.7758902`);
+    console.log(`Uber Redirector UI with auto-redirect: http://localhost:${port}/uber-redirector?input=28.5127698,76.7758902&autoRedirect=true`);
 });
