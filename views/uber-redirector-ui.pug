@@ -15,6 +15,8 @@ html(lang="en")
         --border-color: #e0e0e0;
         --shadow: rgba(0, 0, 0, 0.1);
         --danger-color: #e74c3c;
+        --warning-bg: #fff3e0; /* Light orange for warnings */
+        --warning-text: #e65100; /* Darker orange for warning text */
       }
       body {
         font-family: 'Poppins', sans-serif;
@@ -27,6 +29,7 @@ html(lang="en")
         margin: 0;
         padding: 20px;
         box-sizing: border-box;
+        transition: background-color 0.3s ease;
       }
       .container {
         background-color: var(--card-background);
@@ -37,7 +40,8 @@ html(lang="en")
         max-width: 500px;
         text-align: center;
         position: relative;
-        overflow: hidden; /* For timer animation */
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
       }
       h1 {
         color: var(--primary-color);
@@ -88,7 +92,7 @@ html(lang="en")
         font-size: 1.1em;
         font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.3s ease, transform 0.2s ease;
+        transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
         margin-top: 30px;
         box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
       }
@@ -106,53 +110,129 @@ html(lang="en")
         margin-top: 10px;
         font-size: 0.9em;
       }
-      #autoRedirectMessage {
-        background-color: #ffe0b2; /* Light orange background */
-        color: #e65100; /* Darker orange text */
-        padding: 12px 20px;
-        border-radius: 8px;
-        margin-bottom: 25px;
-        font-weight: 600;
-        font-size: 1.1em;
+
+      /* --- Auto-Redirect Overlay Styles --- */
+      .auto-redirect-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
-        gap: 10px;
-        box-shadow: 0 2px 5px rgba(255, 160, 0, 0.2);
+        align-items: center;
+        color: white;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
+        text-align: center;
       }
-      #autoRedirectMessage span {
-        font-size: 1.3em;
+      .auto-redirect-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .auto-redirect-overlay h2 {
+        font-size: 2.5em;
+        margin-bottom: 20px;
+        color: var(--primary-color);
+      }
+      .countdown-circle {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 8px solid rgba(255, 255, 255, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 30px;
+        font-size: 3.5em;
         font-weight: 700;
+        color: var(--secondary-color);
+        background-color: rgba(255, 255, 255, 0.1);
       }
-      #cancelRedirectButton {
+      .countdown-circle::before {
+        content: '';
+        position: absolute;
+        top: -8px; /* Match border thickness */
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
+        border: 8px solid var(--secondary-color);
+        border-radius: 50%;
+        clip-path: inset(0 0 100% 0); /* Initial state of animation */
+        animation: countdown-fill 5s linear forwards; /* Controlled by JS later */
+        animation-play-state: paused;
+      }
+      .auto-redirect-overlay .cancel-btn {
         background-color: var(--danger-color);
-        margin-left: 15px;
-        padding: 8px 15px;
-        font-size: 0.9em;
-        box-shadow: none;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-top: 20px;
       }
-      #cancelRedirectButton:hover {
+      .auto-redirect-overlay .cancel-btn:hover {
         background-color: #c0392b;
       }
-      /* Hide elements when auto-redirecting to simplify UI */
-      .auto-redirecting .form-group,
-      .auto-redirecting .coordinate-display,
-      .auto-redirecting #redirectButton {
-          display: none;
+
+      @keyframes countdown-fill {
+        0% { clip-path: inset(0 0 100% 0); }
+        100% { clip-path: inset(0 0 0% 0); } /* Fill from top to bottom */
       }
-      .auto-redirecting #autoRedirectMessage {
-          display: flex; /* Ensure message is visible */
+      
+      /* Stop animation when cancelled */
+      .auto-redirect-overlay.paused .countdown-circle::before {
+          animation-play-state: paused;
       }
 
+      /* Responsive adjustments for smaller screens */
+      @media (max-width: 600px) {
+        .container {
+          padding: 25px;
+          margin: 10px;
+        }
+        h1 {
+          font-size: 1.8em;
+          margin-bottom: 20px;
+        }
+        .form-group label {
+          font-size: 0.9em;
+        }
+        input[type="text"] {
+          padding: 10px;
+          font-size: 0.9em;
+        }
+        button {
+          padding: 12px 25px;
+          font-size: 1em;
+        }
+        .auto-redirect-overlay h2 {
+          font-size: 1.8em;
+          margin: 0 20px 20px; /* Reduce side margin on mobile */
+        }
+        .countdown-circle {
+          width: 120px;
+          height: 120px;
+          font-size: 3em;
+        }
+        .auto-redirect-overlay .cancel-btn {
+          padding: 10px 20px;
+          font-size: 0.9em;
+        }
+      }
 
   body
     .container
       h1 Uber Dropoff Redirector
       
-      #autoRedirectMessage(style="display:none;")
-        | Redirecting in #[span#countdown 5] seconds...
-        button#cancelRedirectButton(type="button") Cancel
-
       .form-group
         label(for="latLonInput") Enter Latitude,Longitude:
         input(type="text", id="latLonInput", placeholder="e.g., 28.5127698,76.7758902", value=initialInput || '')
@@ -165,15 +245,22 @@ html(lang="en")
 
       button#redirectButton(disabled=(!initialLat || !initialLon)) Redirect to Uber App
 
+    .auto-redirect-overlay#autoRedirectOverlay
+      h2 Redirecting to Uber App...
+      .countdown-circle
+        span#countdown 5
+      button.cancel-btn#cancelRedirectButton(type="button") Cancel Redirect
+
       script.
         const latLonInput = document.getElementById('latLonInput');
         const displayLat = document.getElementById('displayLat');
         const displayLon = document.getElementById('displayLon');
         const redirectButton = document.getElementById('redirectButton');
         const errorMessage = document.getElementById('errorMessage');
-        const autoRedirectMessage = document.getElementById('autoRedirectMessage');
+        const autoRedirectOverlay = document.getElementById('autoRedirectOverlay');
         const countdownSpan = document.getElementById('countdown');
         const cancelRedirectButton = document.getElementById('cancelRedirectButton');
+        const countdownCircle = document.querySelector('.countdown-circle');
 
         let currentLat = !{JSON.stringify(initialLat)};
         let currentLon = !{JSON.stringify(initialLon)};
@@ -186,8 +273,8 @@ html(lang="en")
 
         function validateAndDisplayCoordinates() {
           const inputValue = latLonInput.value.trim();
-          errorMessage.innerText = ''; // Clear previous errors
-          redirectButton.disabled = true; // Disable button by default
+          errorMessage.innerText = '';
+          redirectButton.disabled = true;
 
           if (inputValue === '') {
             displayLat.innerText = 'N/A';
@@ -236,14 +323,21 @@ html(lang="en")
 
         function startAutoRedirectCountdown() {
             if (autoRedirectScheduled || !autoRedirectEnabled || !currentLat || !currentLon) {
-                return; // Only run if auto-redirect is enabled and valid coordinates are present
+                return;
             }
             autoRedirectScheduled = true;
-            document.body.classList.add('auto-redirecting'); // Add class to hide form elements
-            autoRedirectMessage.style.display = 'flex'; // Show countdown message
-
+            
+            // Activate the overlay
+            autoRedirectOverlay.classList.add('active');
+            
+            // Reset countdown value and display
             countdownValue = REDIRECT_DELAY_SECONDS;
             countdownSpan.innerText = countdownValue;
+
+            // Reset and start animation
+            countdownCircle.style.animation = 'none'; // Clear previous animation
+            void countdownCircle.offsetWidth; // Trigger reflow
+            countdownCircle.style.animation = `countdown-fill ${REDIRECT_DELAY_SECONDS}s linear forwards`;
 
             countdownTimer = setInterval(() => {
                 countdownValue--;
@@ -260,8 +354,8 @@ html(lang="en")
                 clearInterval(countdownTimer);
             }
             autoRedirectScheduled = false;
-            document.body.classList.remove('auto-redirecting'); // Show form elements again
-            autoRedirectMessage.style.display = 'none'; // Hide countdown message
+            autoRedirectOverlay.classList.remove('active'); // Hide overlay
+            countdownCircle.style.animationPlayState = 'paused'; // Pause animation if active
             errorMessage.innerText = 'Auto-redirect cancelled. You can modify input or redirect manually.';
         }
 
@@ -280,13 +374,11 @@ html(lang="en")
 
         latLonInput.addEventListener('input', () => {
             validateAndDisplayCoordinates();
-            // If user types, cancel any ongoing auto-redirect to allow interaction
             if (autoRedirectScheduled) {
                 cancelAutoRedirect();
             }
         });
         redirectButton.addEventListener('click', () => {
-            // If user clicks manual redirect, cancel any auto-redirect
             if (autoRedirectScheduled) {
                 cancelAutoRedirect();
             }
